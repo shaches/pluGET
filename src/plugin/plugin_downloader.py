@@ -152,9 +152,11 @@ def download_specific_plugin_version_spiget(plugin_id, download_path, version_id
 
     try:
         with ZipFile(download_path, "r") as plugin_jar:
-            plugin_jar.open("plugin.yml", "r")
+            namelist = plugin_jar.namelist()
+            if not any(f in namelist for f in ("plugin.yml", "paper-plugin.yml", "bungee.yml", "velocity-plugin.json")):
+                raise KeyError("Missing plugin configuration file")
     except (KeyError, zipfile.BadZipFile, OSError) as err:
-        rich_print_error("Error: Downloaded plugin file was not a proper jar-file! Premium plugins are not supported!")
+        rich_print_error("Error: Downloaded plugin file was not a proper jar-file! Premium or bundle plugins are not supported!")
         rich_print_error("Removing file...")
         os.remove(download_path)
         raise
@@ -185,6 +187,28 @@ def get_specific_plugin_spiget(plugin_id: str, plugin_version: str = "latest", e
         rich_print_error("Error: Plugin ID couldn't be found")
         return None
         
+    if plugin_details.get("premium", False):
+        rich_print_error("Error: Premium plugins are not supported!")
+        return None
+
+    plugin_file_info = plugin_details.get("file", {})
+    if plugin_file_info.get("type") == "external":
+        external_url = plugin_file_info.get("externalUrl")
+        if external_url and "github.com" in external_url:
+            import re
+            match = re.search(r"github\.com/([^/]+)/([^/?#]+)", external_url)
+            if match:
+                github_repo = f"{match.group(1)}/{match.group(2)}"
+                from rich.console import Console
+                Console().print(f"    [not bold][bright_yellow]Plugin is hosted externally on GitHub. Redirecting download...")
+                from src.platforms.github_handler import download_github_plugin
+                download_github_plugin(github_repo, plugin_name, expected_hash)
+                return None
+                
+        rich_print_error(f"Error: Plugin is hosted externally and cannot be downloaded automatically.")
+        rich_print_error(f"Please download it manually from: {external_url}")
+        return None
+
     plugin_name = handle_regex_plugin_name(plugin_name)
     plugin_version_id: str | None = get_version_id_spiget(plugin_id, plugin_version)
     plugin_version_name: str | None = get_version_name_spiget(plugin_id, plugin_version_id)
