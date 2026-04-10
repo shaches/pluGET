@@ -1,4 +1,4 @@
-p# Contribution to pluGET
+# Contribution to pluGET
 
 Thank you for investing your time in contributing to this project! 💜  
 Any contribution you make is greatly appreciated, from bug reports to new features.
