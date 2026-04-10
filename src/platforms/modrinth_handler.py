@@ -6,7 +6,7 @@ import re
 import hashlib
 from pathlib import Path
 
-from src.utils.utilities import api_do_request, create_temp_plugin_folder, remove_temp_plugin_folder, sanitize_filename
+from src.utils.utilities import api_do_request, sanitize_filename
 from src.utils.console_output import rich_print_error
 from src.plugin.plugin_downloader import get_download_path
 from src.handlers.handle_config import config_value
@@ -146,11 +146,9 @@ def download_modrinth_plugin(project_id: str, featured_only: bool = False, versi
     if version is None:
         version = "latest"
 
-    # Create download path with proper SFTP/FTP handling
-    if config_values.connection != "local":
-        download_path = create_temp_plugin_folder()
-    else:
-        download_path = get_download_path(config_values)
+    # Create local download path
+    download_path = get_download_path(config_values)
+    
     # Use original filename if available, otherwise construct one
     if filename:
         plugin_download_name = sanitize_filename(filename)
@@ -180,11 +178,7 @@ def _download_modrinth_file(url: str, download_path: Path, expected_hash: str = 
     from zipfile import ZipFile
     from rich.console import Console
     from rich.progress import Progress
-    from src.utils.utilities import convert_file_size_down, remove_temp_plugin_folder
-    from src.handlers.handle_sftp import sftp_create_connection, sftp_upload_file
-    from src.handlers.handle_ftp import ftp_create_connection, ftp_upload_file
-    
-    config_values = config_value()
+    from src.utils.utilities import convert_file_size_down
     
     # Use rich Progress() to create progress bar (same as existing implementations)
     with Progress(transient=True) as progress:
@@ -261,18 +255,6 @@ def _download_modrinth_file(url: str, download_path: Path, expected_hash: str = 
         rich_print_error("Removing file...")
         os.remove(download_path)
         return None
-
-    # Handle SFTP/FTP upload same as existing implementations
-    if config_values.connection == "sftp":
-        sftp_session = sftp_create_connection()
-        sftp_upload_file(sftp_session, download_path)
-    elif config_values.connection == "ftp":
-        ftp_session = ftp_create_connection()
-        ftp_upload_file(ftp_session, download_path)
-
-    # remove temp plugin folder if plugin was downloaded from sftp/ftp server
-    if config_values.connection != "local":
-        remove_temp_plugin_folder()
 
     return None
 

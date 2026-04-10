@@ -6,7 +6,7 @@ import re
 import hashlib
 from pathlib import Path
 
-from src.utils.utilities import api_do_request, create_temp_plugin_folder, remove_temp_plugin_folder, sanitize_filename
+from src.utils.utilities import api_do_request, sanitize_filename
 from src.utils.console_output import rich_print_error
 from src.plugin.plugin_downloader import get_download_path, download_specific_plugin_version_spiget
 from src.handlers.handle_config import config_value
@@ -110,11 +110,8 @@ def download_github_plugin(github_repo: str, plugin_name: str = None, expected_h
     if version is None:
         version = "latest"
 
-    # Create download path with proper SFTP/FTP handling
-    if config_values.connection != "local":
-        download_path = create_temp_plugin_folder()
-    else:
-        download_path = get_download_path(config_values)
+    # Create local download path
+    download_path = get_download_path(config_values)
     plugin_download_name = sanitize_filename(f"{plugin_name}-{version}.jar")
     download_plugin_path = Path(f"{download_path}/{plugin_download_name}")
     
@@ -140,10 +137,6 @@ def _download_github_file(url: str, download_path: Path, expected_hash: str = No
     from rich.console import Console
     from rich.progress import Progress
     from src.utils.utilities import convert_file_size_down
-    from src.handlers.handle_sftp import sftp_create_connection, sftp_upload_file
-    from src.handlers.handle_ftp import ftp_create_connection, ftp_upload_file
-    
-    config_values = config_value()
     
     # Use rich Progress() to create progress bar (same as spiget implementation)
     with Progress(transient=True) as progress:
@@ -220,18 +213,6 @@ def _download_github_file(url: str, download_path: Path, expected_hash: str = No
         rich_print_error("Removing file...")
         os.remove(download_path)
         return None
-
-    # Handle SFTP/FTP upload same as existing implementation
-    if config_values.connection == "sftp":
-        sftp_session = sftp_create_connection()
-        sftp_upload_file(sftp_session, download_path)
-    elif config_values.connection == "ftp":
-        ftp_session = ftp_create_connection()
-        ftp_upload_file(ftp_session, download_path)
-
-    # remove temp plugin folder if plugin was downloaded from sftp/ftp server
-    if config_values.connection != "local":
-        remove_temp_plugin_folder()
 
     return None
 
