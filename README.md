@@ -13,7 +13,7 @@
 <a href="https://discord.gg/475Uf4NBPF"><img src="https://discordapp.com/api/guilds/801903246284685312/widget.png?style=shield"/></a>
 </p>
 
-# 🚚💨 pluGET(No Remote Hosts)
+# 🚚💨 pluGETNRH(No Remote Hosts)
 
 A powerful package manager that updates plugins and server software for Minecraft servers.   
 
