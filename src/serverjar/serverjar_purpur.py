@@ -12,10 +12,8 @@ from rich.progress import Progress
 
 from src.handlers.handle_config import config_value
 from src.utils.console_output import rich_print_error
-from src.handlers.handle_sftp import sftp_create_connection, sftp_upload_server_jar
-from src.handlers.handle_ftp import ftp_create_connection, ftp_upload_server_jar
 from src.utils.utilities import \
-    api_do_request, create_temp_plugin_folder, remove_temp_plugin_folder, convert_file_size_down, sanitize_filename
+    api_do_request, convert_file_size_down, sanitize_filename
 from src.serverjar.serverjar_paper_velocity_waterfall import \
      get_installed_serverjar_version, get_version_group, get_versions_behind
 
@@ -115,15 +113,11 @@ def serverjar_purpur_update(
     :returns: True/False if the serverjar was downloaded successfully
     """
     config_values = config_value()
-    match config_values.connection:
-        case "local":
-            path_server_root = config_values.path_to_plugin_folder
-            # need help_path or else TypeError will be thrown
-            help_path = Path('/plugins')
-            help_path_str = str(help_path)
-            path_server_root = Path(str(path_server_root).replace(help_path_str, ''))
-        case _:
-            path_server_root = create_temp_plugin_folder()
+    path_server_root = config_values.path_to_plugin_folder
+    # need help_path or else TypeError will be thrown
+    help_path = Path('/plugins')
+    help_path_str = str(help_path)
+    path_server_root = Path(str(path_server_root).replace(help_path_str, ''))
 
     # exit if the mc version can't be found
     if file_server_jar_full_name == None and mc_version == None:
@@ -195,14 +189,5 @@ def serverjar_purpur_update(
     file_size_data = convert_file_size_down(convert_file_size_down(file_size))
     rich_console.print("    [not bold][bright_green]Downloaded[bright_magenta] " + (str(file_size_data)).rjust(9) + \
         f" MB [cyan]→ [white]{download_path}")
-
-    if config_values.connection == "sftp":
-        sftp_session = sftp_create_connection()
-        sftp_upload_server_jar(sftp_session, download_path)
-        remove_temp_plugin_folder()
-    elif config_values.connection == "ftp":
-        ftp_session = ftp_create_connection()
-        ftp_upload_server_jar(ftp_session, download_path)
-        remove_temp_plugin_folder()
 
     return True

@@ -13,12 +13,9 @@ from rich.table import Table
 from rich.console import Console
 from rich.progress import Progress
 
-from src.utils.utilities import convert_file_size_down, remove_temp_plugin_folder, create_temp_plugin_folder
-from src.utils.utilities import api_do_request, sanitize_filename
+from src.utils.utilities import convert_file_size_down, api_do_request, sanitize_filename
 from src.utils.console_output import rich_print_error
 from src.handlers.handle_config import config_value
-from src.handlers.handle_sftp import sftp_create_connection, sftp_upload_file
-from src.handlers.handle_ftp import ftp_create_connection, ftp_upload_file
 
 
 def handle_regex_plugin_name(full_plugin_name) -> str:
@@ -81,19 +78,9 @@ def get_download_path(config_values) -> str:
     """
     Reads the config and gets the path of the plugin folder
     """
-    match (config_values.connection):
-        case "local":
-            match (config_values.local_seperate_download_path):
-                case True:
-                    return config_values.local_path_to_seperate_download_path
-                case _:
-                    return config_values.path_to_plugin_folder
-        case _:
-            match (config_values.remote_seperate_download_path):
-                case True:
-                    return config_values.remote_path_to_seperate_download_path
-                case _:
-                    return config_values.remote_plugin_folder_on_server
+    if config_values.local_seperate_download_path:
+        return config_values.local_path_to_seperate_download_path
+    return config_values.path_to_plugin_folder
 
 
 def download_specific_plugin_version_spiget(plugin_id, download_path, version_id="latest") -> None:
@@ -157,14 +144,6 @@ def download_specific_plugin_version_spiget(plugin_id, download_path, version_id
         os.remove(download_path)
         raise
 
-    if config_values.connection == "sftp":
-        sftp_session = sftp_create_connection()
-        sftp_upload_file(sftp_session, download_path)
-
-    elif config_values.connection == "ftp":
-        ftp_session = ftp_create_connection()
-        ftp_upload_file(ftp_session, download_path)
-
     return None
 
 
@@ -173,11 +152,7 @@ def get_specific_plugin_spiget(plugin_id: str, plugin_version: str = "latest") -
     Gets the specific plugin and calls the download function
     """
     config_values = config_value()
-    # use a temporary folder to store plugins until they are uploaded
-    if config_values.connection != "local":
-        download_path = create_temp_plugin_folder()
-    else:
-        download_path = get_download_path(config_values)
+    download_path = get_download_path(config_values)
 
     url = f"https://api.spiget.org/v2/resources/{plugin_id}"
     plugin_details = api_do_request(url)
@@ -206,11 +181,7 @@ def get_specific_plugin_spiget(plugin_id: str, plugin_version: str = "latest") -
     try:
         download_specific_plugin_version_spiget(plugin_id, download_plugin_path, plugin_version_id)
     except Exception:
-        if config_values.connection != "local":
-            remove_temp_plugin_folder()
         raise
-    if config_values.connection != "local":
-        remove_temp_plugin_folder()
     return None
 
 

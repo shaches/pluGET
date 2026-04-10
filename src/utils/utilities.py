@@ -16,8 +16,6 @@ import requests
 from rich.console import Console
 from rich.table import Table
 
-from src.handlers.handle_sftp import sftp_create_connection
-from src.handlers.handle_ftp import ftp_create_connection
 from src.utils.console_output import rich_print_error
 
 _WINDOWS_RESERVED_RE = re.compile(
@@ -327,16 +325,10 @@ def check_local_plugin_folder(config_values: 'ConfigValue') -> None:
 
 
 def check_requirements() -> None:
-    """Checks connectivity or local folder existence based on config.
-    
-    Initializes connections for SFTP/FTP to ensure prerequisites are met.
+    """Checks if the local plugin folder exists.
+
+    Ensures the local filesystem prerequisites are met.
     """
     config_values = ConfigValue()
-    match config_values.connection:
-        case "local":
-            check_local_plugin_folder(config_values)
-        case "sftp":
-            sftp_create_connection()
-        case "ftp":
-            ftp_create_connection()
+    check_local_plugin_folder(config_values)
     return None
