@@ -30,8 +30,12 @@ def delete_plugin(plugin_name: str) -> None:
 
         try:
             plugin_path = Path(f"{config_values.path_to_plugin_folder}/{plugin_file}")
+            if plugin_path.is_dir():
+                rich_console.print(f"[not bold][bright_yellow]Skipped directory: [bright_magenta]{plugin_file} [bright_yellow]- plugin configs are not removed automatically")
+                continue
+            
             os.remove(plugin_path)
             rich_console.print(f"[not bold][bright_green]Successfully removed: [bright_magenta]{plugin_file}")
-        except Exception:
-            rich_print_error(f"[not bold]Error: Couldn't remove [bright_magenta]{plugin_file}")
+        except Exception as e:
+            rich_print_error(f"[not bold]Error: Couldn't remove [bright_magenta]{plugin_file}[bright_red] - {e}")
     return None

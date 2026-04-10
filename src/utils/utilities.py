@@ -169,6 +169,13 @@ def api_do_request(url: str) -> Optional[Union[Dict[str, Any], List[Any]]]:
     try:
         response = requests.get(url, headers=webrequest_header, timeout=10)
         response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code
+        if status_code == 404:
+            rich_print_error(f"[bright_yellow]Info: Plugin not found (404) at {e.response.url}")
+        else:
+            rich_print_error(f"Error: Webrequest failed with HTTP {status_code}: {e}")
+        return None
     except requests.exceptions.RequestException as e:
         rich_print_error(f"Error: Couldn't create webrequest: {e}")
         return None
